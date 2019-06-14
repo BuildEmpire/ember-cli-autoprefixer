@@ -28,7 +28,9 @@
     "test:all": "ember try:each"
   },
   "dependencies": {
-    "broccoli-autoprefixer": "^5.0.0",
+    "broccoli-autoprefixer": "^7.0.0",
+    "broccoli-funnel": "^2.0.2",
+    "broccoli-merge-trees": "^3.0.2",
     "lodash": "^4.0.0"
   },
   "devDependencies": {

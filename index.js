@@ -1,12 +1,14 @@
 'use strict';
 
-var autoprefixer = require('broccoli-autoprefixer');
-var defaults     = require('lodash/defaults');
+const Autoprefixer = require('broccoli-autoprefixer');
+const funnel       = require('broccoli-funnel');
+const merge        = require('broccoli-merge-trees');
+const defaults     = require('lodash/defaults');
 
 module.exports = {
   name: require('./package').name,
 
-  included: function(app) {
+  included(app) {
     this.app = app;
 
     if (typeof app.import !== 'function' && app.app) {
@@ -16,7 +18,7 @@ module.exports = {
     this._super.included.apply(this, arguments);
 
     this.options = defaults(this.app.options.autoprefixer || {}, {
-      browsers: this.project.targets && this.project.targets.browsers,
+      overrideBrowserslist: this.project.targets && this.project.targets.browsers,
       enabled: true
     });
 
@@ -24,9 +26,17 @@ module.exports = {
     delete this.options.enabled;
   },
 
-  postprocessTree: function(type, tree) {
-    if ((type === 'all' || type === 'styles') && this.enabled) {
-      tree = autoprefixer(tree, this.options);
+  postprocessTree(type, tree) {
+    if (type === 'css' && this.enabled) {
+      // To stop autoprefixer processing map files and crashing,
+      // split the files into two trees and merge after prefixing
+      const cssFilesTree = funnel(tree, { include: [/\.css$/] });
+      const nonCssFilesTree = funnel(tree, { exclude: [/\.css$/] });
+
+      tree = merge([
+        new Autoprefixer(cssFilesTree, this.options),
+        nonCssFilesTree
+      ]);
     }
 
     return tree;
